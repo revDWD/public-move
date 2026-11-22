@@ -1,165 +1,88 @@
-# AGENTS.md — PUBLIC / MOVE
+# AGENTS.md: Public / Move
 
-Guidance for AI coding agents. Read this first; you should be productive in ~5 minutes.
+Guidance for AI coding agents. Read this first.
 
-## 1. Project Overview
+## 1. Project overview
 
-**What it is:** A fully simulated, static, single-page *concept app* set in 2040. It shows a public transportation network where government-owned autonomous cars, shared shuttles, mass-transit lines, emergency units and residents' contributed cars operate as **one public network**, built for public benefit rather than profit.
+**What it is:** a static concept site for a publicly owned, on-demand autonomous transit network ("what if rideshare were public infrastructure?"). It has two parts: a landing page (`/`) and a fully simulated ride app (`/app/`).
 
-**Primary users:** Visitors to the public demo (https://dwdyck.github.io/public-move/): civic advocates, city officials, transit/disability-rights communities, and the general public being persuaded. The author (DWDyck) uses it to advocate for public self-driving mobility as a public right.
+**Audience:** city planners, transit agencies, investors and the general public. It must look like a credible, launch-ready product.
 
-**Main goals**
-- Make the vision tangible: book a simulated trip, watch it on a live map, see costs, guarantees and impact.
-- Show accessibility-first, transparent, non-extractive service design.
-- Be honest and credible: sourced real-world statistics, clearly labelled projections, named open questions.
+**Framing (owner's decision, Nov 2026):** present-day pilot, neutral tone. Avoid political or advocacy language; state benefits as practical outcomes. Keep the honest "what a pilot has to prove" section.
 
-**Explicit non-goals**
-- Not a real transit product: **no real vehicles, accounts, payments, dispatch, maps, or user data.**
-- No backend, auth, analytics, tracking, ads or third-party services.
-- Not a generic framework demo; don't "productionize" it into a different stack.
-- Don't add features that contradict the concept's promises: no surge pricing, tips, ads, premium tiers or paid queue-jumping (these are shown as things the network *never* has).
+**Non-goals**
+- No real vehicles, accounts, payments, dispatch, maps, location or user data.
+- No backend, auth, analytics, tracking, ads or third-party scripts, fonts or CDNs.
+- Never add features that contradict the service promises: no surge pricing, tips, ads, premium tiers or paid queue-jumping.
 
 ## 2. Architecture
 
-**High-level:** Zero-build static site. `index.html` loads `styles.css` and one classic script `app.js` (no modules, no bundler). Everything runs client-side in the browser.
-
-**Major components (all in `app.js`, in this order)**
-1. **Icons** (`P`, `ic()`): inline SVG path strings, rendered via `ic('name')`.
-2. **Data** (`DEST`, `OPTS`, `DISTRICTS`): fictional destinations, ride options, service-area guarantees.
-3. **State** (`S`): one mutable global object (screen, step, destination, option, accessibility flags, community-service state, trip simulation, fictional city stats).
-4. **Pricing** (`quote(k)`): single source of truth for fare, benefit coverage, $18 monthly cap and cost breakdown (energy 38% / upkeep 47% / accessible service 15%).
-5. **Map** (`buildMap`, `PATHS`, `buildVehicles`, `place`): procedurally generated SVG city (seeded via `Math.sin` hash so it is deterministic) with ambient vehicles animated along SVG paths.
-6. **Camera** (`insets`, `fit`, `bboxNow`, `retarget`, `applyVB`): animates the SVG `viewBox` to frame the relevant area; layout differs at ≥900px (side sheet) vs mobile (bottom sheet).
-7. **Views** (`viewHome`, `viewOptions`, `viewApproach`, `viewRide`, `viewArrived`, `viewCity`, `viewServe`, `viewRights`, `viewAccess`, `viewImpact`): pure-ish functions returning HTML strings.
-8. **Render** (`render`, `renderTabs`, `syncMap`): swaps `#sheet` innerHTML, updates tabs, syncs map.
-9. **Simulation** (`frame`, `startTrip`, `SIM`, `addEvent`): `requestAnimationFrame` loop drives ambient vehicles, the trip state machine and the emergency-vehicle event.
-10. **Events** (single delegated `click` listener on `document`): dispatches on `data-act` / `data-id`.
-
-**Data flow:** user click → `data-act` handler mutates `S` → `render()` (or `keepScroll()` for in-place toggles) → view functions read `S`/`quote()` → HTML string → `#sheet`. The rAF loop mutates the SVG and updates a few live DOM nodes (`#eta`, `#bar`, `#street`, `#events`) directly without re-rendering.
-
-**Trip state machine:** `S.step`: `home → options → approach → ride → arrived`; `S.sim.phase`: `idle → matching → approach → wait → ride → done`.
-
-**State management:** Plain global object + full re-render of the active view. Only accessibility prefs persist (`localStorage` key `pm-access`). Everything else resets on reload by design.
-
-## 3. Technology Stack
-
-- **Languages:** vanilla HTML5, CSS3, ES2015+ JavaScript (`'use strict'`).
-- **Frameworks/libraries:** none. **Runtime dependencies: zero. No `package.json`.**
-- **Browser APIs used:** SVG DOM, `requestAnimationFrame`, `localStorage`, `speechSynthesis` (opt-in audio navigation), `inert`.
-- **Fonts:** system font stack only (no web fonts).
-- **Build tools:** none.
-- **Hosting:** GitHub Pages, branch `main`, path `/` (legacy build type) at https://dwdyck.github.io/public-move/.
-- **Deployment:** `git push origin main` → Pages rebuilds automatically (~1 min). No CI.
-- **Local run:** open `index.html`, or `python -m http.server 8000`.
-- **Repo:** https://github.com/DWDyck/public-move (public, MIT).
-
-## 4. File Structure
+Zero-build static site with ES modules. GitHub Pages serves `main` from `/` at **move.abbydavid.com** (see `docs/DEPLOYMENT.md`).
 
 | Path | Purpose |
 |---|---|
-| `index.html` | Static shell: map container, brand, gear button, `#sheet` (main), `#tabs`, toast/live regions, full-screen intro dialog. |
-| `app.js` | All logic, data, views, simulation (~650 lines). |
-| `styles.css` | All styling (~320 lines, dense/minified-style rules). Design tokens in `:root`; breakpoints at 640 / 899-900 / 380 px; `prefers-reduced-motion` and `.calm` handling. |
-| `pitch/` | St. Louis pilot business pitch (`public-move-stl-pitch.md`) and one-page infographic (`.html` source + `.png`). Standalone: not loaded by the app, no JS, no external assets. All figures are labelled projections/assumptions; do not reuse the app's fictional demo stats there. |
-| `README.md` | Public description and run instructions. |
-| `LICENSE` | MIT. |
-| `AGENTS.md` | This file. |
+| `index.html` + `src/landing.js` + `assets/css/landing.css` | Landing page. Fleet cards and open questions render from `src/data.js`. |
+| `app/index.html` + `src/main.js` + `assets/css/app.css` | Ride app shell and entry point. |
+| `assets/css/base.css` | Design tokens (colours, type scale, radii, shadows, motion) and shared components (`.btn`, `.chip`, `.card`). Used by both pages. |
+| `src/data.js` | **Single source of truth:** pricing constants, street grid, pickups, places, fleet, corridors, hubs, depots, demand zones, districts, sourced facts. |
+| `src/state.js` | One mutable `S` object; accessibility prefs persisted to `localStorage` key `pm-access` (known boolean keys only). |
+| `src/trip.js` | `routeBetween()` (street-grid routing), `currentTrip()`, `quote()`, the **only** fare calculation. |
+| `src/map.js` | Builds the SVG city, layers (`#lyr-*`), ambient vehicles, pins and route paths. |
+| `src/camera.js` | Animates the SVG `viewBox` to frame the trip clear of the sheet or panel. Reads `--panel-w` and `--panel-gap` from CSS. |
+| `src/sim.js` | `requestAnimationFrame` loop: ambient fleet, trip phases, notifications, emergency yield, live counters. |
+| `src/render.js` | Renders the active screen into `#sheet`, tabs, map sync, hash routing. |
+| `src/ui.js` | `toast()`, `notify()` (top banner), `announce()` (live region + optional speech). |
+| `src/views/*.js` | `ride` (home/search/options/approach/ride/arrived), `live`, `fleet` (+ `viewServe`), `impact`, `access`. Pure functions returning HTML strings. |
+| `src/icons.js`, `src/illustrations.js` | Line icons; original side-view vehicle art. |
+| `pitch/` | Standalone St. Louis one-pager. Not loaded by the app; its figures are separate projections. |
 
-**Special caution**
-- `quote()` and the cost-split percentages: values are repeated in the receipt (`viewOptions`) and the Impact chart (`viewImpact`). Keep them consistent (they were once out of sync).
-- `bboxNow()` / `fit()` / `insets()`: camera math is coupled to CSS layout (sheet width 440px + 120px left inset at ≥900px). Changing layout requires updating these.
-- `buildMap()` hard-codes coordinates (routes in `DEST`, `PATHS`, station/hub positions, pins). Route endpoints must match map geometry.
-- `frame()`: runs every animation frame; avoid allocations and DOM re-renders here.
-- Intro dialog focus/`inert` handling (`setBg`, `closeIntro`): keep keyboard users out of the background while the intro is open.
-- Facts in `FACTS_REAL` / `FACTS_PROJ`: factual claims with sources. Do not alter numbers without checking the original source.
+**Data flow:** click → `data-act` → handler in `ACTIONS` (`main.js`) mutates `S` → `render()` (or `keepScroll()` for in-place toggles) → views read `S` and `quote()`. The rAF loop only moves SVG transforms and updates `#eta`, `#bar`, `#street` and `#events` directly.
 
-## 5. Development Principles
+**State machines:** `S.step`: `home → search → options → approach → ride → arrived`. `S.sim.phase`: `idle → matching → approach → wait → ride → done`. `S.screen`: `ride | live | fleet | serve | impact | access` (mirrored in the URL hash).
 
-- **Simplicity first:** static files, no build. If a change needs tooling, reconsider the change.
-- **Maintainability over cleverness:** readable beats compact. (Note: existing code is dense; don't make it denser, and don't mass-reformat it.)
-- **Minimize dependencies:** zero today. Keep it that way.
-- **Mobile-first:** the bottom-sheet layout is the baseline; ≥900px is the enhancement. Test at ~360px and ~1280px widths. Respect `safe-area-inset`.
-- **Accessibility is a core promise of the product, not a nicety.**
-  - Semantic buttons with `aria-pressed` / `aria-checked` / `role="switch"|"radio"` as already used.
-  - Visible `:focus-visible` styles; move focus to the `#h` heading on view changes (`render()` does this).
-  - Announce changes via `#live` (`announce()`) and `#toast`.
-  - Touch targets ≥44px; color contrast ≥ WCAG AA; support `.calm` (reduce motion), larger text (`html` font-size 18px), quiet/audio options.
-  - Never convey information by color alone.
-- **Tone:** plain, warm, specific. Concept copy states facts or labelled projections only.
+## 3. Conventions
 
-## 6. Coding Standards
+- **Actions:** add behaviour with `data-act="name"` (+ `data-id`) and an entry in `ACTIONS`. No per-element listeners (search `input`/`keydown` and receipt `toggle` are the delegated exceptions on `#sheet`).
+- **Styling:** use tokens from `base.css`. No inline colours in templates except data-driven tints (`FLEET[k].color`). Class names are short and kebab-case; state goes in `aria-*` or `data-*` attributes.
+- **Paths:** keep every link and asset **relative** (the site must also work under `/public-move/`). Only `404.html` uses root paths.
+- **Escaping:** anything a user types goes through `esc()` before reaching HTML.
+- **Naming:** camelCase functions, `viewX()` for views, SCREAMING_CASE for constant tables.
+- **No `console.log`** in committed code; user feedback goes through `toast()`, `notify()` and `announce()`.
 
-- **Naming:** camelCase for functions/variables (`startTrip`, `buildMap`); `viewX` for view functions; SCREAMING_CASE for constant tables (`DEST`, `OPTS`, `TICKS`); short DOM helpers (`$`, `ic`, `money`, `clock`) already exist, so reuse them. CSS: short kebab/lowercase class names (`.opt`, `.rline`, `.proof`); state via `aria-*` attributes or `data-*` attributes rather than ad-hoc classes where possible.
-- **Actions:** add UI behaviour via a `data-act="name"` attribute and a new `case` in the single click switch. Don't attach per-element listeners.
-- **File organization:** keep `app.js` sections in the existing order, delimited by `/* ---------- section ---------- */` comments. New views follow the `viewX()` + `TABS`/`render` map pattern.
-- **Component structure:** a view is a function returning a template string; shared fragments (`sw()`, `backBtn()`, `proof()`) are small helpers. Reuse existing CSS classes (`card`, `promise`, `fine`, `eyebrow`, `chip`, `never`, `dark`, `green`) before adding new ones.
-- **Styling:** use CSS variables from `:root` (the UI is a dark theme; map colors are light and hard-coded in the SVG). Avoid new hard-coded colors in HTML templates.
-- **Error handling:** wrap browser-storage and speech APIs in `try/catch` and degrade silently (see `applyAccess`, `announce`). No exceptions should reach users.
-- **Logging:** none currently; no `console.log` left in committed code. User-facing feedback goes through `toast()` / `announce()`.
-- **Comments:** only where non-obvious.
+## 4. Special caution
 
-## 7. Security Rules
+- `quote()` is the only fare logic. Receipts, option prices, the arrival summary and the month totals all read it.
+- `routeBetween()` assumes points sit on the street grid (`GRID_X`/`GRID_Y`). New places must use grid intersections.
+- Camera insets depend on CSS layout. Change `--panel-w` in CSS, not in JS.
+- `frame()` runs every animation frame. Don't re-render there or allocate heavily.
+- `FACTS_REAL` and `FACTS_PROJ` are public factual claims with sources. Don't change numbers without checking the original.
 
-This is a static site with no secrets, backend or user accounts, but:
+## 5. Accessibility is a product promise
 
-- **Never expose or commit secrets** (tokens, API keys, `.env`). None are needed; if a task seems to need one, stop and ask.
-- **Never add third-party scripts, trackers, fonts or CDNs** without explicit approval. They would add privacy and supply-chain risk to a site that promises minimal data use.
-- **Sanitize anything dynamic.** Views build HTML with template literals assigned to `innerHTML`. Today all interpolated values come from in-file constants or app state. **If you ever interpolate user-provided text** (form input, URL params, `localStorage` contents), escape it or use `textContent`. `localStorage` (`pm-access`) is parsed in `try/catch`; only trust boolean flag keys from it.
-- **Don't add real data collection.** No real location, accounts, payments, cookies or analytics. The product's concept argues for privacy; the demo must not contradict it.
-- **Least privilege:** don't request browser permissions (geolocation, notifications, etc.). `speechSynthesis` is opt-in and permissionless.
-- **Document risks:** if you introduce anything with a security or privacy implication, note it in the PR/commit message and here.
-- **Content/credibility risk:** statistics are public claims. Keep sources accurate and label modelled/disputed figures as such.
+Focus moves to `#h` on every screen change; announce trip changes; touch targets ≥ 44 px; WCAG AA contrast; honour `.calm` and `prefers-reduced-motion`; never use colour alone; wheelchair mode disables vehicles without a ramp and says why.
 
-## 8. Agent Workflows
+## 6. Constraints
 
-When making changes:
-1. **Understand** the existing implementation: read the relevant section of `app.js`, the matching CSS, and `index.html` before editing.
-2. **Reuse** existing patterns (helpers, CSS classes, `data-act` dispatch, `quote()`).
-3. **Minimize scope.** Surgical edits; no drive-by reformatting.
-4. **Explain trade-offs** briefly when more than one reasonable approach exists.
-5. **Identify risks before coding:** state sync (receipt vs impact), camera/layout coupling, accessibility regressions, rAF performance, factual claims.
-6. **List impacted files** in your summary/commit message.
-7. Validate (section 9), then commit with a clear message. Include the trailer `Co-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>` when an AI agent authored the commit. Pushing to `main` publishes to the public site, so confirm before pushing risky changes.
+- No frameworks, bundlers, TypeScript or preprocessors without explicit approval. JSDoc is fine.
+- No new dependencies. Inter is self-hosted under the OFL.
+- Prefer surgical edits; keep the module boundaries above.
 
-## 9. Agent Constraints
+## 7. Testing
 
-- Do **not** introduce frameworks, bundlers, TypeScript, or CSS preprocessors unless clearly justified and approved.
-- Do **not** add dependencies without explaining why and getting approval.
-- Prefer modifying existing code over rewriting; preserve the architecture unless told otherwise.
-- Avoid premature optimization (the sim is light); optimize only measured problems.
-- Don't remove or weaken accessibility features or the "never has" promises.
-- Don't present fictional numbers as real, or real numbers without a source.
+No automated suite in the repo. Minimum:
+- `for f in src/*.js src/views/*.js; do node --check "$f"; done`
+- Serve (`python3 -m http.server`) and check `/` and `/app/` at ~360 px and ~1280 px: no console errors, no horizontal overflow.
+- Full trip (search → options → confirm → wait → "I'm seated" → arrival); a trip long enough to trigger the emergency yield (e.g. to Meridian Works); cancel mid-trip.
+- Live map layers and filters; Fleet, Impact (district switcher), Accessibility (every toggle; wheelchair disables Shared Ride and Resident Car; settings persist across reload).
+- Keyboard-only run; Enter in search picks the first result; Escape closes settings.
 
-## 10. Testing Expectations
+## 8. Workflow
 
-There is no automated test suite. At minimum:
+Work on a branch and open a PR. Pushing to `main` publishes to the public site. List the files you touched and any risks in the PR. Include the trailer `Co-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>` when an AI agent authored the commit.
 
-**Automated sanity**
-- `node --check app.js` (syntax).
-- Open the page and confirm there are no console errors.
+## 9. Known gaps / ideas
 
-**Manual verification**
-1. Load at ~360px and ~1280px; intro appears, "Start the journey" and "Explore the city first" both work; Esc closes intro; Tab can't reach background content while it's open.
-2. Go tab: pick each destination (Work, Healthcare, Market) → each ride option → Confirm → wait for the vehicle → "I'm Ready" → arrival. Work trips show the emergency-vehicle yield event; verify receipt, "You pay", and fare-cap behaviour (Market is capped at $18/month).
-3. Cancel mid-trip (always free) and reset works.
-4. City tab: stats update, legend toggles show/hide vehicle types.
-5. Serve, Guarantee (district switcher), Impact tabs render with no layout breakage; cost split matches the receipt (38/47/15).
-6. Accessibility screen (gear): toggle every option; confirm wheelchair mode hides the community vehicle option, larger text and reduce-motion apply and persist after reload.
-7. Keyboard-only run-through; screen-reader announcements for trip events; `prefers-reduced-motion` on.
-
-**Edge cases**
-- Wheelchair on + Community option previously selected (falls back to car).
-- Fare near the $18 cap (partial coverage); `localStorage` unavailable or corrupt; resizing during a trip; switching tabs mid-trip and back; rapid repeated clicks; very small (≤380px) and very wide screens; `speechSynthesis` missing.
-
-## 11. Future Improvements & Known Technical Debt
-
-- **Theme mismatch:** CSS is a dark theme, but `<meta name="theme-color">` is `#fbf8f2` (light) and the map is light. Reconcile or add a deliberate light/dark scheme.
-- **Duplicated constants:** cost percentages, the $18 cap and "48" emergency units appear in several places; extract named constants.
-- **Dense code:** `app.js` and `styles.css` use long one-line rules/statements. Gradually split when touching them; consider ES modules (still no build) once it grows past ~1,000 lines.
-- **Full re-render on every toggle** with `keepScroll()` focus restoration is fragile; consider targeted updates if views grow.
-- **Hard-coded map geometry** couples routes, pins, stations and labels; consider a single geometry config.
-- **No tests or CI:** add a small Playwright smoke test and a GitHub Action for syntax/link checks if the project grows.
-- **Return-trip copy** is generic for non-work trips; could be tailored.
-- **Sources:** add a dedicated "Sources" section/page with links and access dates; periodically re-verify statistics.
-- **Advocacy features:** shareable links/OG tags, a printable one-pager, and a "who to contact" guide for local pilots.
-- **Translations / localization** and a proper light theme.
+- Real-device testing (iOS Safari, Android) and screen-reader passes.
+- A small Playwright smoke test plus a CI syntax check.
+- Localisation; a dark theme.
+- A dedicated Sources page with access dates.
