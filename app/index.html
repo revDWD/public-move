@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f6f5">
+<title>Ride · Public / Move</title>
+<meta name="description" content="Book a simulated trip on Public / Move, a publicly owned on-demand autonomous transit network. Live map, fleet, fares and subsidies.">
+<link rel="canonical" href="https://move.abbydavid.com/app/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Ride · Public / Move">
+<meta property="og:description" content="Public transit that comes to you. Try the live demo.">
+<meta property="og:image" content="https://move.abbydavid.com/assets/img/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Public / Move: a map of a city with autonomous public vehicles and a booking card.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
+<link rel="preload" href="../assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+<a class="skip" href="#sheet">Skip to content</a>
+<div class="app" id="app" data-mode="map" data-screen="ride" data-step="home" data-phase="idle">
+  <div class="map" id="map" aria-hidden="true">
+    <svg id="mapsvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid slice"></svg>
+  </div>
+
+  <header class="topbar">
+    <a class="logo" href="../" aria-label="Public / Move home">
+      <svg viewBox="0 0 28 28" width="24" height="24" aria-hidden="true"><rect width="28" height="28" rx="8" fill="#0e1513"/><path d="M8 19.5h6.5a3.5 3.5 0 003.5-3.5v-4a3.5 3.5 0 013.5-3.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="19.5" r="2.4" fill="#fff"/><circle cx="21.5" cy="8.5" r="2.6" fill="#2fd18f"/></svg>
+      <span class="logo-name">Public <i>/</i> Move</span>
+    </a>
+    <span class="sim-badge" title="Everything in this demo is simulated">Simulated demo</span>
+    <button class="icon-btn" id="gearBtn" data-act="open-access" aria-label="Accessibility settings" aria-pressed="false">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="2"/><path d="M5 9l7 1.5L19 9M12 10.5V15l-3 5M12 15l3 5"/></svg>
+    </button>
+  </header>
+
+  <div class="notice" id="notice" role="status" aria-live="polite"></div>
+
+  <div class="panel">
+    <nav class="tabs" id="tabs" aria-label="Primary"></nav>
+    <main class="sheet" id="sheet" tabindex="-1"></main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="sr" id="live" aria-live="polite"></div>
+</div>
+<noscript><p class="noscript">This demo needs JavaScript. <a href="../">Read about Public / Move</a>.</p></noscript>
+<script type="module" src="../src/main.js"></script>
+</body>
+</html>
